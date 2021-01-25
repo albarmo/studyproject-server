@@ -2,7 +2,6 @@ const { User } = require("../models/index");
 const { uuid } = require("uuidv4");
 const { comparePassword } = require("../helpers/bcrypt");
 const { generateToken } = require("../helpers/jwt");
-const user = require("../models/user");
 
 class UserController {
   // asyncronus base register
@@ -15,11 +14,10 @@ class UserController {
       phone_number: req.body.phone_number,
       email: req.body.email,
       gender: req.body.gender,
-      mbti: req.body.mbti,
+      class: req.body.class,
       school: req.body.school,
       password: req.body.password,
     };
-
     try {
       let createUser = await User.create(userRegisterData, {
         returning: true,
@@ -64,6 +62,7 @@ class UserController {
           school: user.school,
           email: user.email,
           role: user.role,
+          class: user.class
         });
       }
     } catch (error) {
