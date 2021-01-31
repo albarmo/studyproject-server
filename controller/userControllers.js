@@ -2,6 +2,7 @@ const { User } = require("../models/index");
 const { uuid } = require("uuidv4");
 const { comparePassword } = require("../helpers/bcrypt");
 const { generateToken } = require("../helpers/jwt");
+const uploader = require("../helpers/uploader");
 
 class UserController {
   // asyncronus base register
@@ -37,6 +38,43 @@ class UserController {
     }
   }
 
+  static registered(req, res) {
+    let generateUUID = uuid();
+    try {
+      const upload = uploader("USERSIMAGE").fields([{ name: "profile_image" }]);
+      upload(req, res, (err) => {
+        if (err) {
+          console.log("gagal upload", err);
+          return res.status(500).json({ msg: err });
+        }
+        const { profile_image } = req.files;
+        const imagePath = profile_image
+          ? "/" + profile_image[0].filename
+          : null;
+        let registerData = {
+          id: generateUUID,
+          fullname: req.body.fullname,
+          profile_image: imagePath,
+          phone_number: req.body.phone_number,
+          email: req.body.email,
+          gender: req.body.gender,
+          class: req.body.class,
+          school: req.body.school,
+          password: req.body.password,
+        };
+        User.create(registerData)
+          .then((data) => {
+            return res.status(201).json({ msg: "success created new user" });
+          })
+          .catch((error) => {
+            return res.status(500).json({ msg: "error created user" });
+          });
+      });
+    } catch (err) {
+      return res.status(500).json({ err: err.message });
+    }
+  }
+
   // async base login
   static async login(req, res) {
     const inputLoginData = {
@@ -62,7 +100,7 @@ class UserController {
           school: user.school,
           email: user.email,
           role: user.role,
-          class: user.class
+          class: user.class,
         });
       }
     } catch (error) {
