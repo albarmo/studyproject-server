@@ -1,26 +1,38 @@
 const { Course } = require("../models/index");
 const { uuid } = require("uuidv4");
+const uploader = require("../helpers/uploader");
 
 class CourseControllers {
-  static async addCourse(req, res) {
+  static addCourse(req, res) {
     let generateUUID = uuid();
-    let inputDataCourse = {
-      id: generateUUID,
-      title: req.body.title,
-      image: req.body.image,
-      video_src: req.body.video_src,
-      pdf: req.body.pdf,
-      challange: req.body.challange,
-      facultyId: req.body.facultyId,
-    };
     try {
-      const createCourse = await Course.create(inputDataCourse, {
-        returning: true,
-        plain: true,
+      const upload = uploader("COURSE_IMAGE").fields([{ name: "image" }]);
+      upload(req, res, (err) => {
+        if (err) {
+          console.log("gagal upload", err);
+          return res.status(500).json({ msg: err });
+        }
+        const { image } = req.files;
+        const imagePath = image ? "/" + image[0].filename : null;
+        let inputDataCourse = {
+          id: generateUUID,
+          title: req.body.title,
+          image: imagePath,
+          video_src: req.body.video_src,
+          pdf: req.body.pdf,
+          challange: req.body.challange,
+          facultyId: req.body.facultyId,
+        };
+        Course.create(inputDataCourse)
+          .then((data) => {
+            return res.status(201).json({ msg: "success created new course" });
+          })
+          .catch((error) => {
+            return res.status(500).json({ msg: "error created course" });
+          });
       });
-      res.status(201).json({ createCourse });
-    } catch (error) {
-      res.status(500).json(error);
+    } catch (err) {
+      return res.status(500).json({ err: err.message });
     }
   }
 
@@ -28,7 +40,7 @@ class CourseControllers {
     try {
       const courses = await Course.findAll();
       if (courses) {
-        return res.status(200).json({ courses });
+        return res.status(200).json(courses);
       }
     } catch (error) {
       return res.status(500).json({ error });
